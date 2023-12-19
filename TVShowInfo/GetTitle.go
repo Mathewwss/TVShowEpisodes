@@ -37,7 +37,7 @@ func (s *TVShow) GetTitle () (error) {
 	}
 
 	// Html pattern
-	pattern := "class=\"sc-afe43def-1"
+	pattern := "class=\"hero__primary-text\""
 
 	// String to slice
 	src := strings.Split(html, "\n")
