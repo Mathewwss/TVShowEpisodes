@@ -26,7 +26,7 @@ func (s *TVShow) getEpisodesYear (source string, season int) error {
 	html := strings.Split(source, "\n")
 
 	// Html pattern
-	pattern := fmt.Sprint("class=\"sc-9115db22-10")
+	pattern := "<span class=\"sc-f2169d65-10 bYaARM\">"
 
 	// Start slice
 	s.EpisodesYear[season] = []int{}
@@ -41,18 +41,15 @@ func (s *TVShow) getEpisodesYear (source string, season int) error {
 
 		}
 
-		// String to slice
-		line := strings.Split(html[a], " ")
-
 		// Check size
-		if len(line) != 3 {
+		if len(strings.Split(html[a], " ")) != 3 {
 			// Next
 			continue
 
 		}
 
 		// Check value
-		if line[1] != pattern {
+		if html[a] != pattern {
 			// Next
 			continue
 
