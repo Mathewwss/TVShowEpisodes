@@ -57,6 +57,12 @@ func (s *TVShow) getEpisodesIMDBID (source string, season int) error {
 
 		}
 
+		div := "<div class=\"ipc-html-content-inner-div\" role=\"presentation\">"
+
+		if html[a + 42] != div {
+			continue
+		}
+
 		// Append slice
 		out = append(out, strings.Split(line[1], "/")[2])
 
