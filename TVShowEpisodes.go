@@ -61,7 +61,8 @@ func main () {
 	for a := 1; a <= tvshow.Seasons; a++ {
 
 		// Check channel values
-		if nil != <- ch {
+		err := <- ch
+		if err != nil {
 			// Show error
 			fmt.Println(err)
 
