@@ -1,150 +1,115 @@
-// ----------------------------- Package ---------------------------- //
-
 package main
 
-// ------------------------------------------------------------------ //
-
-// ----------------------------- Imports ---------------------------- //
-
-import "github.com/Mathewwss/TVShowEpisodes/TVShowInfo"
-import "fmt"
-import "os"
-
-// ------------------------------------------------------------------ //
-
-// ------------------------------ Types ----------------------------- //
-
-// ------------------------------------------------------------------ //
-
-// ---------------------------- Variables --------------------------- //
-
-// ------------------------------------------------------------------ //
-
-// ---------------------------- Functions --------------------------- //
+import (
+	"github.com/Mathewwss/TVShowEpisodes/TVShowInfo"
+	"fmt"
+	"os"
+)
 
 func main () {
-	// Check os arguments
+	// 1. Check args
+	// 2. Create object
+	// 3. Get info
+	// 4. Show data
+
+	// 1
 	if len(os.Args) != 2 {
-		// Show error
 		msg := "[USAGE] -> " + os.Args[0] + " <IMDB ID (TV Show)>"
 		fmt.Println(msg)
 
-		// Stop
 		return
-
 	}
 
-	// Generate struct
+	// 2
 	tvshow, err := TVShowInfo.New(os.Args[1])
 
-	// Check errors
 	if err != nil {
-		// Show error
 		fmt.Println(err)
-
-		// Stop
 		return
-
 	}
 
-	// Create channel
 	ch := make(chan error)
 
-	// View seasons
-	for a := 1; a <= tvshow.Seasons; a++ {
-		// Start go routines
-		go tvshow.GetEpisodes(tvshow.IMDBID, a, ch)
+	func(i, end int) {
 
+		var fn func(int, int)
+		fn = func(i, end int) {
+			if i > end {
+				return
+			}
+
+			go tvshow.GetEpisodes(tvshow.IMDBID, i, ch)
+
+			fn(i + 1, end)
+		}
+
+		fn(i, end)
+
+	}(1, tvshow.Seasons)
+
+	err = func(i, end int) error {
+
+		var fn func(int, int) error
+		fn = func(i, end int) error {
+
+			if i > end {
+				return nil
+			}
+
+			ch_read := <- ch
+
+			if ch_read != nil {
+				return ch_read
+			}
+
+			return fn(i + 1, end)
+		}
+
+		return fn(i, end)
+
+	}(1, tvshow.Seasons)
+
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 
-	// View seasons
-	for a := 1; a <= tvshow.Seasons; a++ {
+	var season func(int)
+	var eps func(int, int)
 
-		// Check channel values
-		err := <- ch
-		if err != nil {
-			// Show error
-			fmt.Println(err)
+	season = func(i int) {
 
-			// Stop
+		if i == len(tvshow.EpisodesID) || i == len(tvshow.EpisodesYear) {
 			return
-
 		}
+
+		if i > 1 {
+			fmt.Printf("\n")
+		}
+
+		fmt.Printf("# Season %02d\n", i)
+
+		eps(i - 1, 0)
+
+		season(i + 1)
 	}
 
-	// View seasons
-	for a := 1; a <= tvshow.Seasons; a++ {
-		// Start variable
-		separator := ""
+	eps = func(i, j int) {
 
-		// Check value
-		if a < 10 {
-			// Update value
-			separator = "# Season 0" + fmt.Sprint(a)
-
-		} else {
-			// Update value
-			separator = "# Season " + fmt.Sprint(a)
-
+		if j >= len(tvshow.EpisodesYear[i]) || j >= len(tvshow.EpisodesID[i]) {
+			return
 		}
 
-		// Show separator
-		fmt.Println(separator)
+		fmt.Printf(
+			// Title.sXeY.Year.ID
+			"%v.s%02de%02d.%v.%v\n",
+			tvshow.Title, i + 1, j + 1,
+			tvshow.EpisodesYear[i][j],
+			tvshow.EpisodesID[i][j],
+		)
 
-		// View episodes
-		for b := 0; b < len(tvshow.EpisodesIMDBID[a]); b++ {
-			// Episode final name
-			ep := tvshow.Title
-			ep = ep + "."
-
-			// Check value
-			if a < 10 {
-				// Update final name
-				ep = ep + "s0" + fmt.Sprint(a)
-
-			} else {
-				// Update final name
-				ep = ep + "s" + fmt.Sprint(a)
-
-			}
-
-			// Check value
-			if b + 1 < 10 {
-				// Update final name
-				ep = ep + "e0" + fmt.Sprint(b + 1)
-				ep = ep + "."
-
-			} else {
-
-				// Update final name
-				ep = ep + "e" + fmt.Sprint(b + 1)
-				ep = ep + "."
-
-			}
-
-			// Check size
-			if b < len(tvshow.EpisodesYear[a]) {
-				// Update final name
-				ep = ep + fmt.Sprint(tvshow.EpisodesYear[a][b])
-				ep = ep + "."
-
-			}
-
-			// Update final name
-			ep = ep + tvshow.EpisodesIMDBID[a][b]
-
-			// Show final name
-			fmt.Println(ep)
-
-		}
-
-		// Check loop
-		if a != tvshow.Seasons {
-			// Skip line
-			fmt.Println()
-
-		}
+		eps(i, j + 1)
 	}
+
+	season(1)
 }
-
-// ------------------------------------------------------------------ //

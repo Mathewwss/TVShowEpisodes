@@ -1,78 +1,39 @@
-// ----------------------------- Package ---------------------------- //
-
 package TVShowInfo
 
-// ------------------------------------------------------------------ //
+import (
+	"github.com/Mathewwss/TVShowEpisodes/utils"
+	"fmt"
+	"errors"
+	"regexp"
+)
 
-// ----------------------------- Imports ---------------------------- //
+func (s *TVShow) getEpisodesID(html *[]string, season int) error {
+	// 1. Find pattern
+	// 2. Get ids
+	// 3. Update values
 
-import "fmt"
-import "strings"
+	// 1
+	pattern := "^.*/tt.*ipc-title-link-wrapper.*$"
+	tags := utils.SliceFilter((*html), func(str string) bool {
 
-// ------------------------------------------------------------------ //
-
-// ------------------------------ Types ----------------------------- //
-
-// ------------------------------------------------------------------ //
-
-// ---------------------------- Variables --------------------------- //
-
-// ------------------------------------------------------------------ //
-
-// ---------------------------- Functions --------------------------- //
-
-func (s *TVShow) getEpisodesIMDBID (source string, season int) error {
-	// String to slice
-	html := strings.Split(source, fmt.Sprint("\n"))
-
-	// Html pattern
-	pattern := "class=\"ipc-title-link-wrapper\" tabindex=\"0\">"
-
-	// Start slice
-	out := []string{}
-
-	// View lines
-	for a := 0; a < len(html); a++ {
-		// Check size
-		if len(pattern) > len(html[a]) {
-			// Next
-			continue
-
+		if regexp.MustCompile(pattern).MatchString(str) {
+			return true
 		}
 
-		// String to slice
-		line := strings.Split(html[a], " ")
+		return false
+	})
 
-		// Check size
-		if len(line) != 4 {
-			// Next
-			continue
-
-		}
-
-		// Check value
-		if line[2] + " " + line[3] != pattern  {
-			// Next
-			continue
-
-		}
-
-		div := "<div class=\"ipc-html-content-inner-div\" role=\"presentation\">"
-
-		if html[a + 42] != div {
-			continue
-		}
-
-		// Append slice
-		out = append(out, strings.Split(line[1], "/")[2])
-
+	if len(tags) == 0 {
+		return errors.New(fmt.Sprint("Not found episodes!"))
 	}
 
-	// Update map
-	s.EpisodesIMDBID[season] = out
+	// 2.
+	codes := utils.SliceMap(tags, func(str string) string {
+		re := regexp.MustCompile("/.*$")
+		return re.ReplaceAllString(str[16:], "")
+	})
 
-	// Finish
+	// 3
+	s.EpisodesID[season - 1] = codes
 	return nil
 }
-
-// ------------------------------------------------------------------ //

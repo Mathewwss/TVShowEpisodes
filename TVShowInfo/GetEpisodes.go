@@ -1,72 +1,40 @@
-// ----------------------------- Package ---------------------------- //
-
 package TVShowInfo
 
-// ------------------------------------------------------------------ //
+import (
+	"github.com/Mathewwss/TVShowEpisodes/GETRequest"
+	"fmt"
+)
 
-// ----------------------------- Imports ---------------------------- //
+func (s *TVShow) GetEpisodes(show_id string, season int, ch chan <- error) {
+	// 1. Get source
+	// 2. Get episodes id
+	// 3. Get episodes year
 
-import "github.com/Mathewwss/TVShowEpisodes/GETRequest"
-import "fmt"
-
-// ------------------------------------------------------------------ //
-
-// ------------------------------ Types ----------------------------- //
-
-// ------------------------------------------------------------------ //
-
-// ---------------------------- Variables --------------------------- //
-
-// ------------------------------------------------------------------ //
-
-// ---------------------------- Functions --------------------------- //
-
-func (s *TVShow) GetEpisodes (show_id string, season int, ch chan <- error) {
-	// Base url
+	// 1
 	url := fmt.Sprint("https://www.imdb.com/title/")
 	url = url + show_id + "/episodes/?season=" + fmt.Sprint(season)
-
-	// Get html source
 	html, err := GETRequest.HtmlSource(url)
 
-	// Check error
 	if err != nil {
-		// Update channel
 		ch <- err
-
-		// Stop
 		return
-
 	}
 
-	// Get IMDB ID
-	err = s.getEpisodesIMDBID(html, season)
+	// 2
+	err = s.getEpisodesID(&html, season)
 
-	// Check errors
 	if err != nil {
-		// Update channel
 		ch <- err
-
-		// Stop
 		return
-
 	}
 
-	// Get episodes year
-	err = s.getEpisodesYear(html, season)
+	// 3
+	err = s.getEpisodesYear(&html, season)
 
-	// Check errors
 	if err != nil {
-		// Update channel
 		ch <- err
-
-		// Stop
 		return
-
 	}
 
-	// Update channel
 	ch <- nil
 }
-
-// ------------------------------------------------------------------ //

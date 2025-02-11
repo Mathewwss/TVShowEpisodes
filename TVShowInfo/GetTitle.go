@@ -1,84 +1,40 @@
-// ----------------------------- Package ---------------------------- //
-
 package TVShowInfo
 
-// ------------------------------------------------------------------ //
+import (
+	"github.com/Mathewwss/TVShowEpisodes/GETRequest"
+	"github.com/Mathewwss/TVShowEpisodes/utils"
+	"fmt"
+	"regexp"
+	"errors"
+)
 
-// ----------------------------- Imports ---------------------------- //
+func (s *TVShow) GetTitle() (error) {
+	// 1. Get html source
+	// 2. Find title
+	// 3. Update value
 
-import "github.com/Mathewwss/TVShowEpisodes/GETRequest"
-import "fmt"
-import "strings"
-
-// ------------------------------------------------------------------ //
-
-// ------------------------------ Types ----------------------------- //
-
-// ------------------------------------------------------------------ //
-
-// ---------------------------- Variables --------------------------- //
-
-// ------------------------------------------------------------------ //
-
-// ---------------------------- Functions --------------------------- //
-
-func (s *TVShow) GetTitle () (error) {
-	// Base url
+	// 1
 	url := fmt.Sprint("https://www.imdb.com/title/") + s.IMDBID
-
-	// Get html code
 	html, err := GETRequest.HtmlSource(url)
 
-	// Check errors
 	if err != nil {
-		// Stop
 		return err
-
 	}
 
-	// Html pattern
-	pattern := "class=\"hero__primary-text\""
-
-	// String to slice
-	src := strings.Split(html, "\n")
-
-	// View lines
-	for a := 0; a < len(src); a++ {
-
-		// Check size
-		if len(src[a]) < len(pattern) {
-			// Next
-			continue
-
+	// 2
+	pattern := `<span class="hero__primary-text" data-testid="hero__primary-text">`
+	res := utils.SliceFilter(html, func(str string) bool {
+		if regexp.MustCompile(pattern).MatchString(str) {
+			return true
 		}
+		return false
+	})
 
-		// String to slice
-		line := strings.Split(src[a], " ")
-
-		// Check size
-		if len(line) != 3 {
-			// Next
-			continue
-
-		}
-
-		// Check value
-		if line[1] != pattern {
-			// Next
-			continue
-
-		}
-
-		// Update struct
-		s.Title = src[a + 1]
-
-		// Stop loop
-		break
-
+	if len(res) == 0 {
+		return errors.New("Not found TV Show!")
 	}
 
-	// Finish
+	// 3
+	s.Title = res[0][len(pattern):]
 	return nil
 }
-
-// ------------------------------------------------------------------ //

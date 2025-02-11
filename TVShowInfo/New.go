@@ -1,80 +1,51 @@
-// ----------------------------- Package ---------------------------- //
-
 package TVShowInfo
 
-// ------------------------------------------------------------------ //
-// ----------------------------- Imports ---------------------------- //
+import (
+	"github.com/Mathewwss/TVShowEpisodes/GETRequest"
+	"github.com/Mathewwss/TVShowEpisodes/utils"
+	"fmt"
+	"errors"
+	"regexp"
+)
 
-import "github.com/Mathewwss/TVShowEpisodes/GETRequest"
-import "fmt"
-import "strings"
-import "errors"
+func New(show_id string) (TVShow, error) {
+	// 1. Get source
+	// 2. Find seasons
+	// 3. Create object
 
-// ------------------------------------------------------------------ //
-
-// ------------------------------ Types ----------------------------- //
-
-// ------------------------------------------------------------------ //
-
-// ---------------------------- Variables --------------------------- //
-
-// ------------------------------------------------------------------ //
-
-// ---------------------------- Functions --------------------------- //
-
-func New (show_id string) (TVShow, error) {
-	// Base url
+	// 1
 	url := fmt.Sprint("https://www.imdb.com/title/")
 	url = url + show_id + "/episodes"
-
-	// Get html code
 	html, err := GETRequest.HtmlSource(url)
 
-	// Check errors
 	if err != nil {
-		// Stop
 		return TVShow{}, err
-
 	}
 
-	// Html pattern
-	tag := "data-testid=\"tab-season-entry\""
+	// 2
+	tag := "^.*tab-season-entry.*$"
+	seasons := utils.SliceFilter(html, func(str string) bool {
+		if regexp.MustCompile(tag).MatchString(str) {
+			return true
+		}
+		return false
+	})
 
-	// Count seasons
-	seasons := strings.Count(html, tag)
-
-	// Check value
-	if seasons == 0 {
-		// Create error
-		msg := "[ERROR] -> '" + show_id + "' is probably not a TV"
-		msg = msg + " " + "Show IMDB ID!"
-		err = errors.New(msg)
-
-		// Stop
-		return TVShow{}, err
-
+	if len(seasons) == 0 {
+		return TVShow{}, errors.New("Not found seasons!")
 	}
 
-	// Start struct
+	// 3
 	out := TVShow{}
 	out.IMDBID = show_id
-	out.Seasons = seasons
-	out.EpisodesIMDBID = map[int][]string{}
-	out.EpisodesYear = map[int][]int{}
-
-	// Get tv show title
+	out.Seasons = len(seasons)
+	out.EpisodesID = make([][]string, len(seasons))
+	out.EpisodesYear = make([][]int, len(seasons))
 	err = out.GetTitle()
 
-	// Check errors
 	if err != nil {
-		// Stop
 		return TVShow{}, err
-
 	}
 
-	// Finish
 	return out, nil
-
 }
-
-// ------------------------------------------------------------------ //

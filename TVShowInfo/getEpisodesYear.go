@@ -1,97 +1,53 @@
-// ----------------------------- Package ---------------------------- //
-
 package TVShowInfo
 
-// ------------------------------------------------------------------ //
+import (
+	"github.com/Mathewwss/TVShowEpisodes/utils"
+	"fmt"
+	"strconv"
+	"regexp"
+	"errors"
+)
 
-// ----------------------------- Imports ---------------------------- //
+func (s *TVShow) getEpisodesYear(html *[]string, season int) error {
+	// 1. Find pattern
+	// 2. String to int
+	// 3. Update values
 
-import "fmt"
-import "strings"
-
-// ------------------------------------------------------------------ //
-
-// ------------------------------ Types ----------------------------- //
-
-// ------------------------------------------------------------------ //
-
-// ---------------------------- Variables --------------------------- //
-
-// ------------------------------------------------------------------ //
-
-// ---------------------------- Functions --------------------------- //
-
-func (s *TVShow) getEpisodesYear (source string, season int) error {
-	// String to int
-	html := strings.Split(source, "\n")
-
-	// Html pattern
-	pattern := "<span class=\"sc-f2169d65-10 bYaARM\">"
-
-	// Start slice
-	s.EpisodesYear[season] = []int{}
-
-	// View lines
-	for a := 0; a < len(html); a++ {
-
-		// Check size
-		if len(pattern) > len(html[a]) {
-			// Next
-			continue
-
+	// 1
+	pattern := fmt.Sprint("^.*f2169d65-10 bYaARM.*$")
+	tags := utils.SliceFilter((*html), func(str string) bool {
+		if regexp.MustCompile(pattern).MatchString(str) {
+			return true
 		}
+		return false
+	})
 
-		// Check size
-		if len(strings.Split(html[a], " ")) != 3 {
-			// Next
-			continue
+	// 2
+	years := make([]int, 0)
+	var err error
+	_ = utils.SliceMap(tags, func(str string) string {
 
-		}
-
-		// Check value
-		if html[a] != pattern {
-			// Next
-			continue
-
-		}
-
-		// String to slice
-		next := strings.Split(html[a + 1], " ")
-
-		// Position
-		index := 0
-
-		// Check size
-		if len(next) == 4 {
-			// Update value
-			index = 3
-
-		} else {
-			// Update value
-			index = 0
-
-		}
-
-		// Start variable
-		num := -1
-
-		// String to int
-		_, err := fmt.Sscanf(next[index], "%d", &num)
-
-		// Check errors
 		if err != nil {
-			// Stop
-			return err
-
+			return ""
 		}
 
-		// Append slice
-		s.EpisodesYear[season] = append(s.EpisodesYear[season], num)
+		n, r := strconv.Atoi(str[len(str) - 4:])
 
+		if r != nil {
+			err = errors.New("Failed convert to int!")
+		}
+
+		years = append(years, n)
+
+		return ""
+
+	})
+
+	if err != nil {
+		return err
 	}
 
-	// Finish
+	// 3
+	s.EpisodesYear[season - 1] = years
 	return nil
 }
-
-// ------------------------------------------------------------------ //
